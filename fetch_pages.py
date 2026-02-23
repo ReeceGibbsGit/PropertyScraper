@@ -12,8 +12,9 @@ USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/121.0"
 ]
 
-def fetch_and_dump_html(urls, output_directory="./output"):
+def fetch_and_dump_html(urls, output_filename_prefix, output_directory="./output", starting_page=1):
     output_filenames = []
+    current_page = starting_page
 
     with httpx.Client(timeout=10.0) as client:
         for i, url in enumerate(urls):
@@ -33,11 +34,13 @@ def fetch_and_dump_html(urls, output_directory="./output"):
 
                 print(f"Success: {url}")
 
-                output_filename = f"property_data_{i+1}.html"
+                output_filename = f"{output_filename_prefix}_{current_page}.html"
                 output_filenames.append(output_filename)
 
                 with open(os.path.join(output_directory, output_filename), "w", encoding="utf-8") as f:
                     f.write(response.text)
+
+                current_page += 1
                 
                 time.sleep(random.uniform(1.5, 3.0))
 

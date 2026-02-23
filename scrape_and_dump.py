@@ -2,7 +2,9 @@ import os
 import csv
 from bs4 import BeautifulSoup
 
-def scrape_and_dump_from_file(path):
+csv_header = ["Address", "Link", "Method of Sale", "Description"]
+
+def scrape_search_results_and_dump_from_file(path):
     with open(path, "r", encoding="utf-8") as f:
         html_content = f.read()
 
@@ -15,20 +17,20 @@ def scrape_and_dump_from_file(path):
 
     assert len(addressElements) == len(links), "Addresses did not line up with links"
 
-    return [[addressElements[i], "https://www.realestate.co.nz" + links[i]] for i in range(len(addressElements))]
+    return [[addressElements[i], "https://www.realestate.co.nz" + links[i], "", ""] for i in range(len(addressElements))]
 
-def scrape_all_and_dump(directory="./output", output_file="properties_dump.csv"):
-    files = os.listdir(directory)
-    files_only = [f for f in files if os.path.isfile(os.path.join(directory, f))]
+def scrape_search_results_and_dump(search_results_dir="./output/search-results", output_dir="./output", output_filename="search_results_dump.csv"):
+    files = os.listdir(search_results_dir)
+    files_only = [f for f in files if os.path.isfile(os.path.join(search_results_dir, f))]
 
     data = []
 
     for path in files_only:
-        data.extend(scrape_and_dump_from_file(f"{directory}/{path}"))
+        data.extend(scrape_search_results_and_dump_from_file(f"{search_results_dir}/{path}"))
 
-    with open(f"{directory}/{output_file}", "w", newline="", encoding="utf-8") as f:
+    with open(f"{output_dir}/{output_filename}", "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
-        writer.writerow(["Address", "Link"])
+        writer.writerow(csv_header)
         writer.writerows(data)
 
 def get_page_count(filename, directory="./output"):
