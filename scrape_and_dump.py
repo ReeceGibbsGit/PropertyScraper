@@ -1,5 +1,6 @@
 import os
 import csv
+import shutil
 from bs4 import BeautifulSoup
 
 csv_header = ["Id", "Address", "Link", "Method of Sale", "Description"]
@@ -48,4 +49,41 @@ def get_page_count(filename, directory="./output"):
 
     return last_page
 
-# def scrape_property_details(property_pages_dir="./output/property-pages", target_csv="search_results_dump.csv"):
+def scrape_property_details(property_pages_dir="./output/property-pages", csv_path="./output/search_results_dump.csv"):
+    files = os.listdir(property_pages_dir)
+    files_only = [f for f in files if os.path.isfile(os.path.join(property_pages_dir, f))]
+
+    with open(csv_path, "r", newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        rows = list(reader)
+
+    rows_by_id = {row["Id"]: row for row in rows}
+
+    for filename in files_only:
+        # Extract suffix from filename, e.g. "property_page_42.html" -> "42"
+        name, _ = os.path.splitext(filename)
+        suffix = name.split("_")[-1]
+
+        with open(os.path.join(property_pages_dir, filename), "r", encoding="utf-8") as f:
+            html_content = f.read()
+
+        soup = BeautifulSoup(html_content, "lxml")
+
+        price_el = soup.find(attrs={"data-test": "pricing-method__price"})
+        desc_el = soup.find(attrs={"data-test": "description-content__description"})
+
+        price = price_el.get_text(strip=True) if price_el else ""
+        description = desc_el.get_text(strip=True) if desc_el else ""
+
+        if suffix in rows_by_id:
+            rows_by_id[suffix]["Method of Sale"] = price
+            rows_by_id[suffix]["Description"] = description
+
+    backup_path = csv_path + ".bak"
+    shutil.copy2(csv_path, backup_path)
+    print(f"CSV backed up to {backup_path}")
+
+    with open(csv_path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=csv_header)
+        writer.writeheader()
+        writer.writerows(rows)

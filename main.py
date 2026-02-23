@@ -1,7 +1,7 @@
 import argparse
 import os
-from fetch_pages import fetch_and_dump_htmls, valid_areas, buildUrls, buildUrl
-from scrape_and_dump import scrape_search_results_and_dump, get_page_count
+from fetch_pages import fetch_and_dump_htmls, valid_areas, buildUrls, buildUrl, fetch_details_for_all_listings_in_csv
+from scrape_and_dump import scrape_search_results_and_dump, get_page_count, scrape_property_details
 
 parser = argparse.ArgumentParser(description="Fetch and scrape property listings from realestate.co.nz")
 subparsers = parser.add_subparsers(dest="command")
@@ -15,37 +15,45 @@ fetch_details_parser.add_argument("--csv-dump", required=True, help="Path to the
 args = parser.parse_args()
 
 if args.command == "fetch-details":
-    pass
-elif args.command != "search":
+    print("Fetching property details for all listings in CSV...")
+    fetch_details_for_all_listings_in_csv(args.csv_dump)
+
+    print("Scraping property details and updating CSV...")
+    scrape_property_details(csv_path=args.csv_dump)
+
+    print("Done.")
+
+elif args.command == "search":
+    print("Clearing output directory...")
+    for f in os.listdir("./output"):
+        file_path = os.path.join("./output", f)
+        if os.path.isfile(file_path):
+            os.remove(file_path)
+
+    for f in os.listdir("./output/search-results"):
+        file_path = os.path.join("./output/search-results", f)
+        if os.path.isfile(file_path):
+            os.remove(file_path)
+
+    print(f"Fetching initial page for area: {args.area}")
+    initial_url = buildUrl(args.area, 1)
+    output_filenames = fetch_and_dump_htmls([initial_url], "search_results", "./output/search-results")
+
+    print(f"Getting page count for area: {args.area}")
+    page_count = get_page_count(output_filenames[0], "./output/search-results")
+
+    print(f"Page count: {page_count}")
+    print(f"Building subsequent urls...")
+    subsequent_urls = buildUrls(args.area, page_count)[1:]
+
+    print(f"Fetching all pages for area: {args.area}")
+    fetch_and_dump_htmls(subsequent_urls, "search_results", "./output/search-results", 2)
+
+    print("Scraping fetched pages and writing to CSV...")
+    scrape_search_results_and_dump()
+
+    print("Done.")
+
+else:
     parser.print_help()
     exit(1)
-
-print("Clearing output directory...")
-for f in os.listdir("./output"):
-    file_path = os.path.join("./output", f)
-    if os.path.isfile(file_path):
-        os.remove(file_path)
-
-for f in os.listdir("./output/search-results"):
-    file_path = os.path.join("./output/search-results", f)
-    if os.path.isfile(file_path):
-        os.remove(file_path)
-
-print(f"Fetching initial page for area: {args.area}")
-initial_url = buildUrl(args.area, 1)
-output_filenames = fetch_and_dump_htmls([initial_url], "search_results", "./output/search-results")
-
-print(f"Getting page count for area: {args.area}")
-page_count = get_page_count(output_filenames[0], "./output/search-results")
-
-print(f"Page count: {page_count}")
-print(f"Building subsequent urls...")
-subsequent_urls = buildUrls(args.area, page_count)[1:]
-
-print(f"Fetching all pages for area: {args.area}")
-fetch_and_dump_htmls(subsequent_urls, "search_results", "./output/search-results", 2)
-
-print("Scraping fetched pages and writing to CSV...")
-scrape_search_results_and_dump()
-
-print("Done.")
