@@ -1,6 +1,6 @@
 import argparse
 import os
-from fetch_pages import valid_areas, buildUrls, buildUrl, fetch_and_dump_html
+from fetch_pages import fetch_and_dump_htmls, valid_areas, buildUrls, buildUrl
 from scrape_and_dump import scrape_search_results_and_dump, get_page_count
 
 parser = argparse.ArgumentParser(description="Fetch and scrape property listings from realestate.co.nz")
@@ -33,7 +33,7 @@ for f in os.listdir("./output/search-results"):
 
 print(f"Fetching initial page for area: {args.area}")
 initial_url = buildUrl(args.area, 1)
-output_filenames = fetch_and_dump_html([initial_url], "search_results", "./output/search-results")
+output_filenames = fetch_and_dump_htmls([initial_url], "search_results", "./output/search-results")
 
 print(f"Getting page count for area: {args.area}")
 page_count = get_page_count(output_filenames[0], "./output/search-results")
@@ -43,7 +43,7 @@ print(f"Building subsequent urls...")
 subsequent_urls = buildUrls(args.area, page_count)[1:]
 
 print(f"Fetching all pages for area: {args.area}")
-fetch_and_dump_html(subsequent_urls, "search_results", "./output/search-results", 2)
+fetch_and_dump_htmls(subsequent_urls, "search_results", "./output/search-results", 2)
 
 print("Scraping fetched pages and writing to CSV...")
 scrape_search_results_and_dump()
