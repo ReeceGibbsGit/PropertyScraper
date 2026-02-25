@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "property-scraper"
+version = "0.1.0"
+requires-python = ">=3.9"
+dependencies = [
+    "httpx",
+    "beautifulsoup4",
+    "lxml",
+]
+
+[project.scripts]
+property-scraper = "main:main"
+
+[tool.setuptools]
+py-modules = ["main", "fetch_pages", "scrape_and_dump"]
